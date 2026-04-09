@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>QR Code Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- QRCode.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-alt: #020617;
+      --card: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.1);
+      --border: #1e293b;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+      --radius-xl: 18px;
+      --radius-2xl: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 40%, #000 100%);
+      color: var(--text);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 1120px;
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.98));
+      border-radius: 30px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow:
+        0 20px 60px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.9);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 22px 24px;
+      backdrop-filter: blur(20px);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      gap: 12px;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title h1 span.logo-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #e0f2fe, #38bdf8 45%, #0ea5e9 100%);
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.9);
+    }
+
+    .title small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.25), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(56, 189, 248, 0.6);
+    }
+
+    .chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.5fr);
+      gap: 18px;
+    }
+
+    @media (max-width: 880px) {
+      .app-shell {
+        padding: 16px 14px 18px;
+        border-radius: 0;
+      }
+      main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.98));
+      border-radius: var(--radius-2xl);
+      padding: 16px 18px 18px;
+      border: 1px solid rgba(30, 64, 175, 0.5);
+      box-shadow:
+        0 16px 40px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.9);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -120px;
+      opacity: 0.04;
+      background:
+        radial-gradient(circle at 0 0, #38bdf8 0, transparent 55%),
+        radial-gradient(circle at 100% 100%, #22c55e 0, transparent 55%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #cbd5f5;
+    }
+
+    .card-header span {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-row-full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    select, input[type="text"], input[type="email"], input[type="tel"],
+    input[type="number"], textarea {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--text);
+      padding: 7px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    textarea {
+      border-radius: 13px;
+      min-height: 64px;
+      resize: vertical;
+      padding-top: 7px;
+      padding-bottom: 7px;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: rgba(56, 189, 248, 0.9);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+      background: rgba(15, 23, 42, 0.98);
+    }
+
+    .inline-inputs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .inline-inputs > * {
+      flex: 1;
+    }
+
+    .help-text {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.86);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pill strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border-radius: 999px;
+      border: none;
+    }
+
+    input[type="range"] {
+      width: 110px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: #0b1120;
+      font-weight: 600;
+      box-shadow: 0 12px 30px rgba(56, 189, 248, 0.5);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 15px 36px rgba(56, 189, 248, 0.6);
+    }
+
+    .btn-ghost {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(15, 23, 42, 0.98);
+      transform: translateY(-1px);
+    }
+
+    .btn-soft {
+      background: rgba(56, 189, 248, 0.08);
+      color: #e0f2fe;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+    }
+
+    .btn-soft:hover {
+      background: rgba(56, 189, 248, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    /* QR preview side */
+    .preview-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .preview-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .preview-top small {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #facc15;
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.9);
+    }
+
+    .qr-shell {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      background: radial-gradient(circle at top, #020617 0, #000 85%);
+      border-radius: 22px;
+      border: 1px solid rgba(15, 23, 42, 0.95);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.9);
+      margin-bottom: 10px;
+    }
+
+    #qrPreview {
+      padding: 16px;
+      background: radial-gradient(circle at top left, #020617 0, #000 80%);
+      border-radius: 26px;
+      box-shadow:
+        0 18px 38px rgba(0, 0, 0, 0.95),
+        0 0 0 1px rgba(31, 41, 55, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #qrPreview canvas,
+    #qrPreview img {
+      display: block;
+      border-radius: 18px;
+    }
+
+    .preview-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .preview-footer span strong {
+      color: #e5e7eb;
+    }
+
+    .error {
+      color: var(--danger);
+      font-size: 11px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <header>
+    <div class="title">
+      <h1>
+        <span class="logo-dot"></span>
+        QR Code Studio
+      </h1>
+      <small>สร้าง &amp; ปรับแต่ง QR Code: URL, ข้อความ, เบอร์, อีเมล, Wi-Fi, Location, Contact</small>
+    </div>
+    <div class="chip">
+      <span class="chip-dot"></span>
+      <span>Offline ready · HTML+JS เท่านั้น</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT: FORM -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Payload &amp; Options</h2>
+        <span>เลือกประเภทข้อมูล และกำหนดรายละเอียด</span>
+      </div>
+
+      <div class="form-grid">
+        <!-- Type -->
+        <div class="form-row-full">
+          <label for="qrType">ประเภทข้อมูล (Data Type)</label>
+          <select id="qrType">
+            <option value="url">URL / Website</option>
+            <option value="text">Text / ข้อความ</option>
+            <option value="phone">Phone / เบอร์โทรศัพท์</option>
+            <option value="email">Email / อีเมล</option>
+            <option value="wifi">Wi-Fi</option>
+            <option value="location">Location / แผนที่</option>
+            <option value="vcard">Contact / vCard</option>
+          </select>
+          <div class="help-text">
+            ใช้ URL สำหรับลิงก์เว็บไซต์, Text สำหรับข้อความธรรมดา, Wi-Fi สำหรับแชร์รหัสผ่าน เป็นต้น
+          </div>
+        </div>
+
+        <!-- URL -->
+        <div class="form-row-full payload-field" data-type="url">
+          <label for="urlInput">URL / Website</label>
+          <input id="urlInput" type="text" placeholder="https://example.com" />
+          <div class="help-text">แนะนำให้ใส่ https:// ครบถ้วน</div>
+        </div>
+
+        <!-- Text -->
+        <div class="form-row-full payload-field" data-type="text" style="display:none;">
+          <label for="textInput">ข้อความ (Text)</label>
+          <textarea id="textInput" placeholder="พิมพ์ข้อความที่ต้องการฝังใน QR"></textarea>
+        </div>
+
+        <!-- Phone -->
+        <div class="form-row-full payload-field" data-type="phone" style="display:none;">
+          <label for="phoneInput">เบอร์โทรศัพท์</label>
+          <input id="phoneInput" type="tel" placeholder="0891234567" />
+          <div class="help-text">จะถูกสร้างเป็นลิงก์ tel: คลิกแล้วโทรได้บนมือถือ</div>
+        </div>
+
+        <!-- Email -->
+        <div class="payload-field form-row-full" data-type="email" style="display:none;">
+          <label for="emailAddress">Email / อีเมล</label>
+          <input id="emailAddress" type="email" placeholder="you@example.com" />
+          <div class="inline-inputs" style="margin-top:6px;">
+            <div>
+              <label for="emailSubject">Subject</label>
+              <input id="emailSubject" type="text" placeholder="หัวข้อ (ไม่บังคับ)" />
+            </div>
+            <div>
+              <label for="emailBody">Body</label>
+              <input id="emailBody" type="text" placeholder="ข้อความ (ไม่บังคับ)" />
+            </div>
+          </div>
+          <div class="help-text">จะถูกสร้างเป็น mailto:address?subject=...&amp;body=...</div>
+        </div>
+
+        <!-- WiFi -->
+        <div class="payload-field form-row-full" data-type="wifi" style="display:none;">
+          <label>Wi-Fi Network</label>
+          <div class="inline-inputs">
+            <div>
+              <label for="wifiSsid">SSID</label>
+              <input id="wifiSsid" type="text" placeholder="ชื่อ Wi-Fi" />
+            </div>
+            <div>
+              <label for="wifiPassword">Password</label>
+              <input id="wifiPassword" type="text" placeholder="รหัสผ่าน" />
+            </div>
+          </div>
+          <div class="inline-inputs" style="margin-top:6px;">
+            <div>
+              <label for="wifiEncryption">Encryption</label>
+              <select id="wifiEncryption">
+                <option value="WPA">WPA/WPA2</option>
+                <option value="WEP">WEP</option>
+                <option value="nopass">Open (ไม่มีรหัส)</option>
+              </select>
+            </div>
+            <div>
+              <label for="wifiHidden">Hidden</label>
+              <select id="wifiHidden">
+                <option value="false">ไม่ซ่อน (ปกติ)</option>
+                <option value="true">ซ่อน SSID</option>
+              </select>
+            </div>
+          </div>
+          <div class="help-text">
+            รูปแบบมาตรฐาน: WIFI:T:WPA;S:MyWifi;P:password;;
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="payload-field form-row-full" data-type="location" style="display:none;">
+          <label>Location / แผนที่</label>
+          <div class="inline-inputs">
+            <div>
+              <label for="latInput">Latitude</label>
+              <input id="latInput" type="number" step="0.000001" placeholder="13.7563" />
+            </div>
+            <div>
+              <label for="lngInput">Longitude</label>
+              <input id="lngInput" type="number" step="0.000001" placeholder="100.5018" />
+            </div>
+          </div>
+          <div class="help-text">จะสร้างลิงก์ Google Maps เช่น https://www.google.com/maps?q=lat,lng</div>
+        </div>
+
+        <!-- vCard / Contact -->
+        <div class="payload-field form-row-full" data-type="vcard" style="display:none;">
+          <label>Contact / vCard</label>
+          <div class="inline-inputs">
+            <div>
+              <label for="vcardName">ชื่อ-นามสกุล</label>
+              <input id="vcardName" type="text" placeholder="ชื่อ นามสกุล" />
+            </div>
+            <div>
+              <label for="vcardOrg">องค์กร / บริษัท</label>
+              <input id="vcardOrg" type="text" placeholder="องค์กร (ไม่บังคับ)" />
+            </div>
+          </div>
+          <div class="inline-inputs" style="margin-top:6px;">
+            <div>
+              <label for="vcardPhone">Phone</label>
+              <input id="vcardPhone" type="tel" placeholder="0891234567" />
+            </div>
+            <div>
+              <label for="vcardEmail">Email</label>
+              <input id="vcardEmail" type="email" placeholder="you@example.com" />
+            </div>
+          </div>
+          <div style="margin-top:6px;">
+            <label for="vcardNote">Note / หมายเหตุ</label>
+            <input id="vcardNote" type="text" placeholder="เช่น ตำแหน่งงาน, Line ID ฯลฯ (ไม่บังคับ)" />
+          </div>
+          <div class="help-text">ใช้รูปแบบ vCard 3.0 รองรับมือถือส่วนใหญ่</div>
+        </div>
+      </div>
+
+      <!-- Style & options -->
+      <div class="controls-row">
+        <div class="pill">
+          <span>สี QR</span>
+          <input id="colorDark" type="color" value="#111827" />
+          <span>พื้นหลัง</span>
+          <input id="colorLight" type="color" value="#ffffff" />
+        </div>
+        <div class="pill">
+          <span>ขนาด</span>
+          <input id="qrSize" type="range" min="160" max="420" value="260" />
+          <span id="qrSizeLabel"><strong>260</strong> px</span>
+        </div>
+        <div class="pill">
+          <span>ระดับแก้ไขข้อผิดพลาด</span>
+          <select id="qrECLevel">
+            <option value="H">สูงสุด (H)</option>
+            <option value="Q">สูง (Q)</option>
+            <option value="M">กลาง (M)</option>
+            <option value="L">ต่ำ (L)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="pill">
+          <span>โลโก้ (ใส่ในไฟล์ PNG ตอนดาวน์โหลด)</span>
+          <input id="logoUpload" type="file" accept="image/*" style="font-size:11px; max-width:200px;" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="generateBtn">
+          <span class="icon">⚡</span> สร้าง QR Code
+        </button>
+        <button class="btn-soft" id="downloadBtn">
+          <span class="icon">⬇️</span> ดาวน์โหลดเป็น PNG
+        </button>
+        <button class="btn-ghost" id="clearBtn">
+          <span class="icon">🧹</span> ล้างค่า
+        </button>
+      </div>
+
+      <div id="errorBox" class="error" style="display:none;"></div>
+    </section>
+
+    <!-- RIGHT: PREVIEW -->
+    <section class="card">
+      <div class="preview-inner">
+        <div class="preview-top">
+          <small>แสดงตัวอย่าง QR Code แบบเรียลไทม์</small>
+          <div class="badge">
+            <span class="badge-dot"></span>
+            Live Preview
+          </div>
+        </div>
+
+        <div class="qr-shell">
+          <div id="qrPreview"></div>
+        </div>
+
+        <div class="preview-footer">
+          <span>ขนาดภาพเมื่อดาวน์โหลด: <strong id="downloadSizeLabel">260 × 260 px</strong></span>
+          <span>แนะนำทดสอบสแกนด้วยมือถือทุกครั้งก่อนนำไปใช้งานจริง</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  // --- Global state ---
+  const qrContainer = document.getElementById("qrPreview");
+  let qr;
+  let logoImage = null; // ใช้ตอนผสมโลโก้ลง PNG
+
+  // สร้าง QR เริ่มต้น
+  function initQR() {
+    qrContainer.innerHTML = "";
+    const size = parseInt(document.getElementById("qrSize").value, 10) || 260;
+    const ecLevel = document.getElementById("qrECLevel").value || "H";
+
+    qr = new QRCode(qrContainer, {
+      text: "https://example.com",
+      width: size,
+      height: size,
+      colorDark: document.getElementById("colorDark").value || "#111827",
+      colorLight: document.getElementById("colorLight").value || "#ffffff",
+      correctLevel: QRCode.CorrectLevel[ecLevel] || QRCode.CorrectLevel.H
+    });
+
+    document.getElementById("downloadSizeLabel").textContent = size + " × " + size + " px";
+  }
+
+  // ดึง payload ตามประเภท
+  function buildPayload() {
+    const type = document.getElementById("qrType").value;
+    let payload = "";
+
+    if (type === "url") {
+      payload = (document.getElementById("urlInput").value || "").trim();
+      if (payload && !/^https?:\/\//i.test(payload)) {
+        payload = "https://" + payload;
+      }
+    }
+
+    if (type === "text") {
+      payload = (document.getElementById("textInput").value || "").trim();
+    }
+
+    if (type === "phone") {
+      const phone = (document.getElementById("phoneInput").value || "").trim();
+      if (phone) {
+        payload = "tel:" + phone;
+      }
+    }
+
+    if (type === "email") {
+      const email = (document.getElementById("emailAddress").value || "").trim();
+      const subject = encodeURIComponent((document.getElementById("emailSubject").value || "").trim());
+      const body = encodeURIComponent((document.getElementById("emailBody").value || "").trim());
+
+      if (email) {
+        let query = [];
+        if (subject) query.push("subject=" + subject);
+        if (body) query.push("body=" + body);
+        payload = "mailto:" + email + (query.length ? "?" + query.join("&") : "");
+      }
+    }
+
+    if (type === "wifi") {
+      const ssid = (document.getElementById("wifiSsid").value || "").trim();
+      const password = (document.getElementById("wifiPassword").value || "").trim();
+      const enc = document.getElementById("wifiEncryption").value;
+      const hidden = document.getElementById("wifiHidden").value === "true";
+
+      if (ssid) {
+        // เรียบง่าย ไม่ escape ซับซ้อน
+        payload = "WIFI:T:" + enc + ";S:" + ssid + ";";
+        if (enc !== "nopass") {
+          payload += "P:" + password + ";";
+        }
+        if (hidden) {
+          payload += "H:true;";
+        }
+        payload += ";";
+      }
+    }
+
+    if (type === "location") {
+      const lat = (document.getElementById("latInput").value || "").trim();
+      const lng = (document.getElementById("lngInput").value || "").trim();
+      if (lat && lng) {
+        payload = "https://www.google.com/maps?q=" + encodeURIComponent(lat + "," + lng);
+      }
+    }
+
+    if (type === "vcard") {
+      const name = (document.getElementById("vcardName").value || "").trim();
+      const org = (document.getElementById("vcardOrg").value || "").trim();
+      const phone = (document.getElementById("vcardPhone").value || "").trim();
+      const email = (document.getElementById("vcardEmail").value || "").trim();
+      const note = (document.getElementById("vcardNote").value || "").trim();
+
+      if (name || phone || email) {
+        let lines = [
+          "BEGIN:VCARD",
+          "VERSION:3.0",
+          "FN:" + name
+        ];
+        if (org) lines.push("ORG:" + org);
+        if (phone) lines.push("TEL;TYPE=CELL:" + phone);
+        if (email) lines.push("EMAIL:" + email);
+        if (note) lines.push("NOTE:" + note);
+        lines.push("END:VCARD");
+        payload = lines.join("\n");
+      }
+    }
+
+    return payload;
+  }
+
+  // แสดง/ซ่อนฟอร์มตามประเภท
+  function updatePayloadFields() {
+    const type = document.getElementById("qrType").value;
+    document.querySelectorAll(".payload-field").forEach(el => {
+      el.style.display = el.getAttribute("data-type") === type ? "block" : "none";
+    });
+  }
+
+  // สร้าง QR ตาม payload ปัจจุบัน
+  function regenerateQR() {
+    const errorBox = document.getElementById("errorBox");
+    const payload = buildPayload().trim();
+
+    if (!payload) {
+      errorBox.style.display = "block";
+      errorBox.textContent = "กรุณากรอกข้อมูลให้ครบถ้วนก่อนสร้าง QR Code";
+      return;
+    } else {
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+    }
+
+    const size = parseInt(document.getElementById("qrSize").value, 10) || 260;
+    const ecLevel = document.getElementById("qrECLevel").value || "H";
+
+    qrContainer.innerHTML = "";
+
+    qr = new QRCode(qrContainer, {
+      text: payload,
+      width: size,
+      height: size,
+      colorDark: document.getElementById("colorDark").value || "#111827",
+      colorLight: document.getElementById("colorLight").value || "#ffffff",
+      correctLevel: QRCode.CorrectLevel[ecLevel] || QRCode.CorrectLevel.H
+    });
+
+    document.getElementById("downloadSizeLabel").textContent = size + " × " + size + " px";
+  }
+
+  // ดาวน์โหลด PNG (ผสมโลโก้ถ้ามี)
+  function downloadPNG() {
+    if (!qr) regenerateQR(); // กันไว้กรณียังไม่เคยกด
+
+    const canvas = qrContainer.querySelector("canvas");
+    const img = qrContainer.querySelector("img");
+
+    if (!canvas && !img) {
+      alert("ยังไม่มี QR Code ให้ดาวน์โหลด กรุณากดปุ่ม 'สร้าง QR Code' ก่อน");
+      return;
+    }
+
+    let baseCanvas;
+
+    if (canvas) {
+      baseCanvas = canvas;
+    } else if (img && img.src) {
+      // กรณี library สร้างเป็น <img>
+      baseCanvas = document.createElement("canvas");
+      const tmpCtx = baseCanvas.getContext("2d");
+      baseCanvas.width = img.naturalWidth || 260;
+      baseCanvas.height = img.naturalHeight || 260;
+      tmpCtx.drawImage(img, 0, 0, baseCanvas.width, baseCanvas.height);
+    } else {
+      alert("ไม่สามารถอ่านข้อมูลภาพ QR ได้");
+      return;
+    }
+
+    // ถ้ามีโลโก้ -> ผสมโลโก้ลงบน Canvas ใหม่
+    if (logoImage) {
+      const mixedCanvas = document.createElement("canvas");
+      const size = Math.min(baseCanvas.width, baseCanvas.height);
+      mixedCanvas.width = size;
+      mixedCanvas.height = size;
+      const ctx = mixedCanvas.getContext("2d");
+
+      ctx.drawImage(baseCanvas, 0, 0, size, size);
+
+      const logoSize = size * 0.25; // โลโก้ประมาณ 25% ของความกว้าง
+      const logoX = (size - logoSize) / 2;
+      const logoY = (size - logoSize) / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      const radius = logoSize * 0.18;
+      ctx.moveTo(logoX + radius, logoY);
+      ctx.lineTo(logoX + logoSize - radius, logoY);
+      ctx.quadraticCurveTo(logoX + logoSize, logoY, logoX + logoSize, logoY + radius);
+      ctx.lineTo(logoX + logoSize, logoY + logoSize - radius);
+      ctx.quadraticCurveTo(logoX + logoSize, logoY + logoSize, logoX + logoSize - radius, logoY + logoSize);
+      ctx.lineTo(logoX + radius, logoY + logoSize);
+      ctx.quadraticCurveTo(logoX, logoY + logoSize, logoX, logoY + logoSize - radius);
+      ctx.lineTo(logoX, logoY + radius);
+      ctx.quadraticCurveTo(logoX, logoY, logoX + radius, logoY);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+      ctx.restore();
+
+      triggerDownload(mixedCanvas.toDataURL("image/png"));
+    } else {
+      triggerDownload(baseCanvas.toDataURL("image/png"));
+    }
+  }
+
+  function triggerDownload(dataUrl) {
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = "qr-code.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // จัดการอัพโหลดโลโก้
+  document.getElementById("logoUpload").addEventListener("change", function (e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) {
+      logoImage = null;
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        logoImage = img;
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ฟังชันล้างค่า
+  function clearAll() {
+    document.getElementById("qrType").value = "url";
+    document.getElementById("urlInput").value = "";
+    document.getElementById("textInput").value = "";
+    document.getElementById("phoneInput").value = "";
+    document.getElementById("emailAddress").value = "";
+    document.getElementById("emailSubject").value = "";
+    document.getElementById("emailBody").value = "";
+    document.getElementById("wifiSsid").value = "";
+    document.getElementById("wifiPassword").value = "";
+    document.getElementById("wifiEncryption").value = "WPA";
+    document.getElementById("wifiHidden").value = "false";
+    document.getElementById("latInput").value = "";
+    document.getElementById("lngInput").value = "";
+    document.getElementById("vcardName").value = "";
+    document.getElementById("vcardOrg").value = "";
+    document.getElementById("vcardPhone").value = "";
+    document.getElementById("vcardEmail").value = "";
+    document.getElementById("vcardNote").value = "";
+    document.getElementById("colorDark").value = "#111827";
+    document.getElementById("colorLight").value = "#ffffff";
+    document.getElementById("qrSize").value = 260;
+    document.getElementById("qrSizeLabel").innerHTML = "<strong>260</strong> px";
+    document.getElementById("qrECLevel").value = "H";
+    document.getElementById("logoUpload").value = "";
+    logoImage = null;
+    document.getElementById("errorBox").style.display = "none";
+    qrContainer.innerHTML = "";
+    initQR();
+    updatePayloadFields();
+  }
+
+  // Event listeners
+  document.getElementById("qrType").addEventListener("change", () => {
+    updatePayloadFields();
+  });
+
+  document.getElementById("qrSize").addEventListener("input", e => {
+    const val = parseInt(e.target.value, 10) || 260;
+    document.getElementById("qrSizeLabel").innerHTML = "<strong>" + val + "</strong> px";
+  });
+
+  document.getElementById("generateBtn").addEventListener("click", e => {
+    e.preventDefault();
+    regenerateQR();
+  });
+
+  document.getElementById("downloadBtn").addEventListener("click", e => {
+    e.preventDefault();
+    downloadPNG();
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", e => {
+    e.preventDefault();
+    clearAll();
+  });
+
+  // Init on load
+  updatePayloadFields();
+  initQR();
+</script>
+</body>
+</html>
